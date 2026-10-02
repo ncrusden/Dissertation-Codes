@@ -1,0 +1,53 @@
+method_code = """
+import pandas as pd
+import numpy as np
+from scipy.stats import zscore, ttest_1samp
+from collections import Counter
+
+# Step 1: Load datasets
+file_paths = {
+    "Winter": "Winter (1).csv",
+    "Spring": "Spring (1).csv",
+    "Summer": "Summer (1).csv",
+    "Fall": "Fall (1).csv"
+}
+
+def standardize_columns(df, season):
+    df = df.rename(columns={df.columns[0]: "FIPS"})
+    df.columns = df.columns.astype(str)
+    df = df.loc[:, ~df.columns.duplicated()]
+    if season in ["Spring", "Fall"]:
+        df = df.loc[:, df.columns.str.match(r'^\\d{4}(\\.1)?$') | (df.columns == 'FIPS')]
+        df.columns = df.columns.str.extract(r'(\\d{4})')[0].fillna('FIPS')
+    df.columns = [col if col == "FIPS" else int(col) for col in df.columns]
+    return df
+
+# Load and clean
+cleaned_data = {}
+for season, path in file_paths.items():
+    df = pd.read_csv(path)
+    cleaned_data[season] = standardize_columns(df, season)
+
+
+# Step 2: Exclude Alaska and Hawaii
+def exclude_non_contiguous(df):
+    df["FIPS"] = df["FIPS"].astype(str).str.zfill(5)
+    return df[~df["FIPS"].str.startswith(("02", "15"))]
+
+contiguous_data = {season: exclude_non_contiguous(df) for season, df in averaged_data.items()}
+
+# Step 3: Calculate anomalies
+def calculate_anomalies(df):
+    fips = df["FIPS"]
+    data = df.drop(columns=["FIPS"])
+    long_term_avg = data.mean(axis=1)
+    anomalies = data.subtract(long_term_avg, axis=0)
+    anomalies.insert(0, "FIPS", fips)
+    return anomalies
+
+anomaly_data = {season: calculate_anomalies(df) for season, df in contiguous_data.items()}
+
+# Save this as a .py file for user reference
+code_path = "/mnt/data/SEWH_Methods_Code.py"
+with open(code_path, "w") as f:
+    f.write(method_code)
