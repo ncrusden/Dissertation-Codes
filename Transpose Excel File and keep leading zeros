@@ -1,0 +1,26 @@
+Import pandas as pd
+
+#this lets the program read the file chosen
+>>> df =pd.read_excel(r"M:[put folder name here].xlsx")
+#this transposes it, the id thing makes it not change FIPS so leading zero isnt lost
+>>> df_long = pd.melt(df, id_vars=['FIPS'], var_name='year', value_name='Temp')
+#this previews what you just did
+>>> print(df_long.head())
+    FIPS  year      Temp
+0  01001  1895 -0.555897
+1  01003  1895 -0.362051
+2  01005  1895 -1.009231
+3  01007  1895 -0.622564
+4  01009  1895 -0.485128
+#this changes the date to long format
+>>> df_long['year'] = '01/01/' + df_long['year'].astype(str)
+#previews
+>>> print(df_long.head())
+    FIPS        year      Temp
+0  01001  01/01/1895 -0.555897
+1  01003  01/01/1895 -0.362051
+2  01005  01/01/1895 -1.009231
+3  01007  01/01/1895 -0.622564
+4  01009  01/01/1895 -0.485128
+#this saves it
+>>> df_long.to_csv
